@@ -7,7 +7,7 @@ public class Solver {
     final Integer GOAL;
 
     // The initial state we begin with (all jugs empty)
-    final Integer[] startState;
+    final Integer[] START_STATE;
 
     /**
      *
@@ -17,9 +17,9 @@ public class Solver {
     public Solver(final Integer[] jugs, final Integer goal) {
         this.JUGS = jugs;
         this.GOAL = goal;
-        this.startState = new Integer[]{JUGS.length};
-        for(int i=0; i<startState.length; i++) {
-            this.startState[i] = 0;
+        this.START_STATE = new Integer[JUGS.length];
+        for(int i = 0; i< START_STATE.length; i++) {
+            this.START_STATE[i] = 0;
         }
     }
 
@@ -29,8 +29,21 @@ public class Solver {
      * @return
      */
     public List<Action> createActions(Integer[] state) {
-        //TODO:
-        return null;
+        List<Action> pourStates = new ArrayList<>();
+        for(int i=0; i<JUGS.length; i++) {
+            pourStates.add(new Action(state, MoveType.EMPTY, i));
+            pourStates.add(new Action(state, MoveType.FILL, i));
+            for(int j=0; j<JUGS.length; j++) {
+                pourStates.add(new Action(state, MoveType.POUR, i, j));
+            }
+        }
+        return pourStates;
+    }
+
+    public Integer[] renderAction(Action action) {
+        if(action.getMoveType()==null) return START_STATE;
+        return action.getMoveType().getMove()
+                .doMove(JUGS, action.getState(), action.getJugIndex());
     }
 
     /**
@@ -39,7 +52,22 @@ public class Solver {
      * @return
      */
     public boolean solutionExists(List<List<Action>> actions) {
-        //TODO:
+        for(List<Action> trail : actions) {
+            if(solutionExistsInTrail(trail)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean solutionExistsInTrail(List<Action> actionTrail) {
+        Action lastAction = actionTrail.get(actionTrail.size() - 1);
+        Integer[] endState = renderAction(lastAction);
+        for(int i=0; i < endState.length; i++) {
+            if(endState[i] == GOAL) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -59,17 +87,70 @@ public class Solver {
      * </ul>
      */
     public List<List<Action>> combineTrails(List<Action> trail, List<Action> next) {
-        //TODO:
-        return null;
+        List<List<Action>> retList = new ArrayList<>();
+        for(Action nextAction : next) {
+            List<Action> updated = new ArrayList<>(trail);
+            updated.add(nextAction);
+            retList.add(updated);
+        }
+        return retList;
     }
 
     /**
-     * For the given parameters, find a solution where the Glass capacities can produce
+     * Helper method that takes an application state and return new actions
+     * that can be performed from it
+     * @param action The current state of jugs (ie, how much water is in each one)
+     * @param stateHistory The list of states we have already visited
+     * @return The list of new actions that can be taken
+     */
+    private List<Action> solve(Action action, Set<List<Integer>> stateHistory) {
+        Integer[] state = renderAction(action);
+        List<Action> retState = createActions(state);
+        List<Action> retActions = new ArrayList<>();
+        for (Action nextAction : retState) {
+            Integer[] nextState = renderAction(nextAction);
+            if (stateHistory.contains(Arrays.asList(nextState))) continue;
+            stateHistory.add(Arrays.asList(nextState));
+            retActions.add(nextAction);
+        }
+        return retActions;
+    }
+
+    /**
+     * For the given parameters, find a solution where the Jug capacities can produce
      * the goal amount.
      * @return A list of actions that yield the goal amount, or null if no solution exists
      */
     public List<Action> findSolution() {
-        //TODO:
+        Set<List<Integer>> history = new HashSet<>();
+        history.add(Arrays.asList(START_STATE));
+        List<List<Action>> trails = new ArrayList<>();
+
+        List<Action> initialTrail = new ArrayList<>();
+        initialTrail.add(new Action(START_STATE, null, new Integer[]{}));
+        trails.add(initialTrail);
+
+        while(!solutionExists(trails) && trails.size() > 0) {
+            ListIterator<List<Action>> it = trails.listIterator();
+            while(it.hasNext()) {
+                List<Action> trail = it.next();
+                Action endState= trail.get(trail.size()-1);
+                List<Action> next = solve(endState, history);
+                it.remove();
+
+                if(next.size() > 0) {
+                    List<List<Action>> combined = new ArrayList<>();
+                    combined.addAll(combineTrails(trail, next));
+                    for(List<Action> combinedTrail : combined) {
+                        it.add(combinedTrail);
+                    }
+                }
+            }
+        }
+
+        for(List<Action> trail : trails) {
+            if(solutionExistsInTrail(trail)) return trail;
+        }
         return null;
     }
 
