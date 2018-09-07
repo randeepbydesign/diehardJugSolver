@@ -1,5 +1,7 @@
 package org.waterpouring;
 
+import java.util.ArrayList;
+
 /**
  * A move describes some action taken on one or more jugs
  */
@@ -12,5 +14,5 @@ public interface Move {
      * @param jugIndex The indices of the various jugs to be operated on
      * @return the new state of the jugs after performing the given move
      */
-    Integer[] doMove(final Integer[] JUGS, Integer[] state, Integer[] jugIndex);
+    ArrayList<Integer> doMove(final Integer[] JUGS, ArrayList<Integer> state, Integer[] jugIndex);
 }

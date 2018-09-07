@@ -1,5 +1,6 @@
 package org.waterpouring;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -7,45 +8,33 @@ import java.util.Arrays;
  * One or more actions will combine to create the total solution if it can be solved.
  */
 public class Action {
-    private Integer[] jugIndex;
-    private MoveType moveType;
-    private Integer[] state;
+    Integer[] jugIndex;
+    MoveType moveType;
+    ArrayList<Integer> endState;
 
     /**
      * Create an action
-     * @param state The state at the time immediately before taking this action
+     * @param JUGS The jugs, in gallon size, that we are working with
+     * @param startState The state at the time of taking this action
      * @param moveType
      * @param jugIndex The indices of the jugs we are working with. Depending on the move type this can
      *                 be 1 or 2 values
+     * @return
      */
-    public Action(Integer[] state, MoveType moveType, Integer... jugIndex) {
+    public static Action of(Integer[] JUGS, ArrayList<Integer> startState, MoveType moveType, Integer... jugIndex) {
+        return new Action(JUGS, startState, moveType, jugIndex);
+    }
+
+    private Action(Integer[] JUGS, ArrayList<Integer> startState, MoveType moveType, Integer... jugIndex) {
         this.jugIndex = jugIndex;
         this.moveType = moveType;
-        this.state = state;
+        this.endState = moveType==null ?
+                startState : moveType.move.doMove(JUGS, startState, jugIndex);
     }
 
-    public Integer[] getJugIndex() {
-        return jugIndex;
-    }
 
-    public void setJugIndex(Integer[] jugIndex) {
-        this.jugIndex = jugIndex;
-    }
-
-    public MoveType getMoveType() {
-        return moveType;
-    }
-
-    public void setMoveType(MoveType moveType) {
-        this.moveType = moveType;
-    }
-
-    public Integer[] getState() {
-        return state;
-    }
-
-    public void setState(Integer[] state) {
-        this.state = state;
+    public ArrayList<Integer> getEndState() {
+        return endState;
     }
 
     @Override
@@ -53,7 +42,7 @@ public class Action {
         return "Action{" +
                 "jugIndex=" + Arrays.toString(jugIndex) +
                 ", moveType=" + moveType +
-                ", state=" + Arrays.toString(state) +
+                ", endState=" + endState +
                 '}';
     }
 }
